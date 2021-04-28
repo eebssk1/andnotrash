@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sched.h>
+#include <sys/resource.h>
 
 typedef enum {Dir,File} TYPE;
 
@@ -119,6 +121,8 @@ int delit(const char *path ,TYPE type) {
 
 
 int main() {
+	sched_setscheduler(0,SCHED_BATCH,NULL);
+	setpriority(PRIO_PROCESS,0,15);
 	struct trash* tptr = trashes;
 	struct trash* endptr = tptr + sizeof(trashes)/sizeof(trash);
 	while(1) {

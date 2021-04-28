@@ -1,1 +1,1 @@
-bu/g9a64p28/bin/aarch64-linux-android-gcc andnotrash.c -o andnotrash -Wall -Os -fgraphite-identity -fgraphite -Wl,-X,-O3,--icf=safe -fuse-ld=gold
+~/bu/g9a64p28/bin/aarch64-linux-android-gcc andnotrash.c -o andnotrash -Wall -Os -fgraphite-identity -fgraphite -Wl,-X,-O3
