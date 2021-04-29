@@ -11,10 +11,18 @@
 
 typedef enum {Dir,File} TYPE;
 
+bool isNameNumOnly(const char* name);
+void spec_rm1(const char *path);
+int rec_rm_dir(const char *path);
+bool isDirectoryEmpty(char *dirname);
+bool isFileExists(const char *path);
+bool isDirectoryExists(const char *path);
+int delit(const char *path ,TYPE type);
+
 struct trash {
 	char name[64];
 	TYPE type;
-} trash ;
+} trash;
 
 struct trash trashes[] = {
 	{".7934039a",Dir},
@@ -42,9 +50,63 @@ struct trash trashes[] = {
 	{".UTSystemConfig",Dir},
 	{"widgetone",Dir},
 	{"IntsigLog",Dir},
+	//shitty umeng
+	{"Android/data/.um",Dir},
+	{"Android/.system_android_l2",File},
+	{"Android/obj/.um",Dir},
+	{"Documents/environment.pub",File},
+	{"Pictures/jpush",Dir},
+	{"Pictures/.sss",File},
+	{"Music/.qqq",File},
+	{"Download/.tim",File},
+	{"baidu/tempdata",Dir},
+	{"app/.d10",File},
 	//Seriously?
 	{"backups",Dir},
 	};
+char spec[][256] = {"/sdcard/Documents/"};
+
+bool isNameNumOnly(const char* name) {
+	bool n = true;
+	for(int tmp = 0;tmp < strlen(name);name++) {
+		if(!(name[tmp] >= '0' && name[tmp] <= '9'))
+			n = false;
+	}
+	return n;
+}
+
+
+void spec_rm1(const char *path) {
+	DIR *d = opendir(path);
+	if (d) {
+		struct dirent *p;
+		while((p=readdir(d))) {
+			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+				continue;
+			if(isNameNumOnly(p->d_name)) {
+				char thispath[256] = {0};
+				char fullpath1[256] = {0};
+				char fullpath2[256] = {0};
+				strcpy(thispath,path);
+				strcat(thispath,p->d_name);
+				strcpy(fullpath1,path);
+				strcpy(fullpath2,path);
+				strcat(fullpath1,p->d_name);
+				strcat(fullpath2,p->d_name);
+				strcat(fullpath1,"/environment.priv");
+				strcat(fullpath2,"/environment.pub");
+				if(isFileExists(fullpath1))
+					remove(fullpath1);
+				if(isFileExists(fullpath2))
+					remove(fullpath2);
+				if(isDirectoryEmpty(thispath))
+					remove(thispath);
+			}
+		}
+	}
+	closedir(d);
+	return;
+}
 
 int rec_rm_dir(const char *path) {
 	DIR *d = opendir(path);
@@ -79,6 +141,23 @@ int rec_rm_dir(const char *path) {
 	if (!r)
 		r = remove(path);
 	return r;
+}
+
+bool isDirectoryEmpty(char *dirname) {
+  int n = 0;
+  struct dirent *d;
+  DIR *dir = opendir(dirname);
+  if (dir == NULL)
+    return true;
+  while ((d = readdir(dir)) != NULL) {
+    if(++n > 2)
+      break;
+  }
+  closedir(dir);
+  if (n <= 2)
+    return true;
+  else
+    return false;
 }
 
 bool isFileExists(const char *path)
@@ -122,7 +201,7 @@ int delit(const char *path ,TYPE type) {
 
 int main() {
 	sched_setscheduler(0,SCHED_BATCH,NULL);
-	setpriority(PRIO_PROCESS,0,15);
+	setpriority(PRIO_PROCESS,0,10);
 	struct trash* tptr = trashes;
 	struct trash* endptr = tptr + sizeof(trashes)/sizeof(trash);
 	while(1) {
@@ -130,7 +209,8 @@ int main() {
 			delit(tptr->name,tptr->type);
 			tptr++;
 		}
+		spec_rm1(spec[0]);
 		tptr = trashes;
-		sleep(5);
+		sleep(12);
 	}
 }
