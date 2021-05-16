@@ -14,13 +14,16 @@ typedef enum {Dir,File} TYPE;
 bool isNameNumOnly(const char* name);
 void spec_rm1(const char *path);
 int rec_rm_dir(const char *path);
-bool isDirectoryEmpty(char *dirname);
+bool isDirectoryEmpty(const char *dirname);
 bool isFileExists(const char *path);
 bool isDirectoryExists(const char *path);
 int delit(const char *path ,TYPE type);
+void spec_rm2(const char *path);
+bool isNameLikeUUID(const char* name);
+void android_uuid_rm();
 
 struct trash {
-	char name[64];
+	char name[32];
 	TYPE type;
 } trash;
 
@@ -63,18 +66,59 @@ struct trash trashes[] = {
 	{"app/.d10",File},
 	//Seriously?
 	{"backups",Dir},
+	{".zp",Dir},
+	{"Android/qidm",File}
 	};
-char spec[][256] = {"/sdcard/Documents/"};
+	
+char spec[][128] = {"/sdcard/Documents/","/sdcard/at/","/sdcard/libs/","/sdcard/MQ/"};
 
 bool isNameNumOnly(const char* name) {
 	bool n = true;
-	for(int tmp = 0;tmp < strlen(name);name++) {
+	for(int tmp = 0;tmp < strlen(name);tmp++) {
 		if(!(name[tmp] >= '0' && name[tmp] <= '9'))
 			n = false;
 	}
 	return n;
 }
 
+bool isNameLikeUUID(const char* name) {
+	if(strlen(name) != 32)
+		return false;
+	int sc,zc;
+	for(int tmp=0;tmp<strlen(name);tmp++) {
+		if(!((name[tmp] >= '0' && name[tmp] <= '9') ||  (name[tmp] >= 'a' && name[tmp] <= 'z')))
+			return false;
+		if(name[tmp] >= '0' && name[tmp] <= '9') {
+			++sc;
+			continue;
+		}
+		if(name[tmp] >= 'a' && name[tmp] <= 'z') {
+			++zc;
+		}
+	}
+	if(sc >= 5 && zc >= 4)
+		return true;
+	else
+		return false;
+}
+void android_uuid_rm() {
+	DIR *d = opendir("/sdcard/Android");
+	if (d) {
+		struct dirent *p;
+		while((p=readdir(d))) {
+			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, "..") || !strcmp(p->d_name, "data") || !strcmp(p->d_name, "media") || !strcmp(p->d_name, "obb"))
+				continue;
+			char fullpath[128] = "/sdcard/Android/";
+			strcat(fullpath,p->d_name);
+			if(isDirectoryExists(fullpath))
+				continue;
+			if(isNameLikeUUID(p->d_name))
+				remove(fullpath);
+		}
+	}
+	closedir(d);
+	return;
+}
 
 void spec_rm1(const char *path) {
 	DIR *d = opendir(path);
@@ -84,9 +128,9 @@ void spec_rm1(const char *path) {
 			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
 				continue;
 			if(isNameNumOnly(p->d_name)) {
-				char thispath[256] = {0};
-				char fullpath1[256] = {0};
-				char fullpath2[256] = {0};
+				char thispath[128] = {0};
+				char fullpath1[128] = {0};
+				char fullpath2[128] = {0};
 				strcpy(thispath,path);
 				strcat(thispath,p->d_name);
 				strcpy(fullpath1,path);
@@ -105,6 +149,32 @@ void spec_rm1(const char *path) {
 		}
 	}
 	closedir(d);
+	return;
+}
+
+void spec_rm2(const char *path) {
+	DIR *d = opendir(path);
+	if (d) {
+		struct dirent *p;
+		while((p=readdir(d))) {
+			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+				continue;
+			if(!strcmp(p->d_name,"uuid")){
+				char fullpath[128] = {0};
+				strcpy(fullpath,path);
+				strcat(fullpath,"uuid");
+				remove(fullpath);
+			} else if (!strcmp(p->d_name,"qidm")) {
+				char fullpath[128] = {0};
+				strcpy(fullpath,path);
+				strcat(fullpath,"qidm");
+				remove(fullpath);
+			}
+		}
+	}
+	closedir(d);
+	if(isDirectoryEmpty(path))
+		remove(path);
 	return;
 }
 
@@ -143,7 +213,7 @@ int rec_rm_dir(const char *path) {
 	return r;
 }
 
-bool isDirectoryEmpty(char *dirname) {
+bool isDirectoryEmpty(const char *dirname) {
   int n = 0;
   struct dirent *d;
   DIR *dir = opendir(dirname);
@@ -185,7 +255,7 @@ bool isDirectoryExists(const char *path)
 }
 
 int delit(const char *path ,TYPE type) {
-	char fullpath[256] = {0};
+	char fullpath[128] = {0};
 	strcpy(fullpath,"/sdcard/");
 	strcat(fullpath,path);
 	if(type == File) {
@@ -209,8 +279,12 @@ int main() {
 			delit(tptr->name,tptr->type);
 			tptr++;
 		}
-		spec_rm1(spec[0]);
 		tptr = trashes;
-		sleep(12);
+		spec_rm1(spec[0]);
+		for(int i =1;i<=3;i++) {
+			spec_rm2(spec[i]);
+		}
+		android_uuid_rm();
+		sleep(15);
 	}
 }
