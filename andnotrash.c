@@ -70,7 +70,7 @@ struct trash trashes[] = {
 	{"Android/qidm",File}
 	};
 	
-char spec[][128] = {"/sdcard/Documents/","/sdcard/at/","/sdcard/libs/","/sdcard/MQ/","/sdcard/sitemp"};
+char spec[][128] = {"/sdcard/Documents/","/sdcard/at/","/sdcard/libs/","/sdcard/MQ/","/sdcard/sitemp/"};
 
 bool isNameNumOnly(const char* name) {
 	bool n = true;
@@ -287,6 +287,6 @@ int main() {
 			spec_rm2(spec[i]);
 		}
 		android_uuid_rm();
-		sleep(15);
+		sleep(11);
 	}
 }
