@@ -70,7 +70,7 @@ struct trash trashes[] = {
 	{"Android/qidm",File}
 	};
 	
-char spec[][128] = {"/sdcard/Documents/","/sdcard/at/","/sdcard/libs/","/sdcard/MQ/"};
+char spec[][128] = {"/sdcard/Documents/","/sdcard/at/","/sdcard/libs/","/sdcard/MQ/","/sdcard/sitemp"};
 
 bool isNameNumOnly(const char* name) {
 	bool n = true;
@@ -86,15 +86,15 @@ bool isNameLikeUUID(const char* name) {
 		return false;
 	int sc,zc;
 	for(int tmp=0;tmp<strlen(name);tmp++) {
-		if(!((name[tmp] >= '0' && name[tmp] <= '9') ||  (name[tmp] >= 'a' && name[tmp] <= 'z')))
-			return false;
 		if(name[tmp] >= '0' && name[tmp] <= '9') {
 			++sc;
 			continue;
 		}
 		if(name[tmp] >= 'a' && name[tmp] <= 'z') {
 			++zc;
+			continue;
 		}
+		return false;
 	}
 	if(sc >= 5 && zc >= 4)
 		return true;
@@ -173,8 +173,10 @@ void spec_rm2(const char *path) {
 		}
 	}
 	closedir(d);
-	if(isDirectoryEmpty(path))
-		remove(path);
+	if(isDirectoryExists(path)) {
+		if(isDirectoryEmpty(path))
+			remove(path);
+	}
 	return;
 }
 
@@ -281,7 +283,7 @@ int main() {
 		}
 		tptr = trashes;
 		spec_rm1(spec[0]);
-		for(int i =1;i<=3;i++) {
+		for(int i =1;i<=4;i++) {
 			spec_rm2(spec[i]);
 		}
 		android_uuid_rm();
