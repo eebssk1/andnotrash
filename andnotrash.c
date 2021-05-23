@@ -21,13 +21,20 @@ int delit(const char *path ,TYPE type);
 void spec_rm2(const char *path);
 bool isNameLikeUUID(const char* name);
 void android_uuid_rm();
+void cmb_uuid_rm();
 
 struct trash {
 	char name[32];
 	TYPE type;
 } trash;
 
-struct trash trashes[] = {
+struct t1 {
+	char key[32];
+	int val;
+	} t1;
+
+
+static struct trash trashes[] = {
 	{".7934039a",Dir},
 	{".a.dat",File},
 	{".com.taobao.dp",Dir},
@@ -67,10 +74,47 @@ struct trash trashes[] = {
 	//Seriously?
 	{"backups",Dir},
 	{".zp",Dir},
-	{"Android/qidm",File}
+	{"Android/qidm",File},
+	{"._android.dat",File},
+	{"..ccdid",File},
+	{"..ccvid",File},
+	{".duid",File},
+	{".n_a",File},
+	{".o_a",File},
+	{"cmb/data/cmbinnerid.db",File},
+	{"DCIM/.yyy",File},
+	{"DCIM/.tmfs",Dir},
+	{"DCIM/.tmsdual",Dir},
 	};
 	
-char spec[][128] = {"/sdcard/Documents/","/sdcard/at/","/sdcard/libs/","/sdcard/MQ/","/sdcard/sitemp/"};
+	static struct t1 t1s[] = {
+	{"uuid",1},
+	{"qidm",2},
+	{"com.igexin.sdk.deviceId.db",3},
+	{"com.zhihu.android.bin",4},
+	{"com.zhihu.android.db",5},
+	};
+	
+char spec[][128] = {"/sdcard/Documents/","/sdcard/tv.danmaku.bili/","/sdcard/at/","/sdcard/libs/","/sdcard/MQ/","/sdcard/sitemp/"};
+
+int keyfromstring(char *key) {
+	struct t1* tptr = t1s;
+	struct t1* endptr = tptr + sizeof(t1s)/sizeof(t1);
+	while(tptr < endptr) {
+			if(strcmp(tptr->key,key) == 0)
+				return tptr->val;
+			tptr++;
+		}
+	return -1;
+}
+
+char *stringfromkey(int val) {
+	if(val > sizeof(t1s)/sizeof(t1))
+		return "null";
+	struct t1* tptr = t1s;
+	tptr += --val;
+	return tptr->key;
+}
 
 bool isNameNumOnly(const char* name) {
 	bool n = true;
@@ -120,6 +164,25 @@ void android_uuid_rm() {
 	return;
 }
 
+void cmb_uuid_rm() {
+	DIR *d = opendir("/sdcard/cmb/data");
+	if (d) {
+		struct dirent *p;
+		while((p=readdir(d))) {
+			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+				continue;
+			char fullpath[128] = "/sdcard/cmb/data/";
+			strcat(fullpath,p->d_name);
+			if(isDirectoryExists(fullpath))
+				continue;
+			if(isNameLikeUUID(p->d_name))
+				remove(fullpath);
+		}
+	}
+	closedir(d);
+	return;
+}
+
 void spec_rm1(const char *path) {
 	DIR *d = opendir(path);
 	if (d) {
@@ -151,7 +214,7 @@ void spec_rm1(const char *path) {
 	closedir(d);
 	return;
 }
-
+	
 void spec_rm2(const char *path) {
 	DIR *d = opendir(path);
 	if (d) {
@@ -159,17 +222,16 @@ void spec_rm2(const char *path) {
 		while((p=readdir(d))) {
 			if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
 				continue;
-			if(!strcmp(p->d_name,"uuid")){
-				char fullpath[128] = {0};
-				strcpy(fullpath,path);
-				strcat(fullpath,"uuid");
+			char fullpath[128] = {0};
+			char *name = NULL;
+			strcpy(fullpath,path);
+			int val = keyfromstring(p->d_name);
+			if(val >=0)
+				name = stringfromkey(val);
+			if(strcmp(p->d_name,"null") != 0)
+				strcat(fullpath,name);
+			if(strcmp(fullpath,path) != 0)
 				remove(fullpath);
-			} else if (!strcmp(p->d_name,"qidm")) {
-				char fullpath[128] = {0};
-				strcpy(fullpath,path);
-				strcat(fullpath,"qidm");
-				remove(fullpath);
-			}
 		}
 	}
 	closedir(d);
@@ -282,11 +344,12 @@ int main() {
 			tptr++;
 		}
 		tptr = trashes;
-		spec_rm1(spec[0]);
-		for(int i =1;i<=4;i++) {
+		for(int i=0;i<=1;i++)
+			spec_rm1(spec[i]);
+		for(int i =2;i<=5;i++)
 			spec_rm2(spec[i]);
-		}
 		android_uuid_rm();
-		sleep(11);
+		cmb_uuid_rm();
+		sleep(12);
 	}
 }
